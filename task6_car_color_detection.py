@@ -1,21 +1,3 @@
-"""
-=============================================================
-TASK 6: CAR COLOUR DETECTION MODEL
-=============================================================
-Requirements:
-  - PyTorch + torchvision (COCO object detection)
-  - Detect cars at traffic signal
-  - Blue cars → RED rectangle
-  - Other colored cars → BLUE rectangle
-  - Count cars and people at signal
-  - Display car color labels + counts
-  - Proper GUI with image preview
-
-Setup:
-  pip install torch torchvision opencv-python Pillow
-=============================================================
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import cv2
@@ -34,12 +16,10 @@ import torchvision.transforms.functional as TF
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# COCO class IDs
 CAR_CLASSES    = {3: "car", 6: "bus", 8: "truck", 4: "motorcycle", 2: "bicycle"}
 PERSON_CLASS   = 1
 CONF_THRESHOLD = 0.45
 
-# Color ranges in HSV
 COLOR_RANGES = {
     "Blue":   ([100, 50, 50],  [135, 255, 255]),
     "Red":    ([0, 80, 80],    [10, 255, 255]),
@@ -53,15 +33,13 @@ COLOR_RANGES = {
     "Orange": ([10, 100, 100], [20, 255, 255]),
 }
 
-
-# ── Colour Detector ───────────────────────────────────────────
 def detect_car_color(frame_bgr, box):
     """Determine dominant color of vehicle from its bounding box region."""
     x1, y1, x2, y2 = box
     roi = frame_bgr[y1:y2, x1:x2]
     if roi.size == 0:
         return "Unknown"
-    # Use upper 60% of vehicle (avoids road/shadow)
+      
     h = roi.shape[0]
     roi = roi[:int(h * 0.6)]
     if roi.size == 0:
@@ -73,13 +51,11 @@ def detect_car_color(frame_bgr, box):
                             np.array(hi, dtype=np.uint8))
         score = int(mask.sum() / 255)
         scores[name] = score
-    # Merge Red and Red2
+    
     scores["Red"] = scores.get("Red", 0) + scores.pop("Red2", 0)
     best = max(scores, key=scores.get)
     return best if scores[best] > 50 else "Unknown"
 
-
-# ── PyTorch Detection Model ───────────────────────────────────
 class TrafficDetector:
     def __init__(self):
         self.model = None
@@ -125,9 +101,8 @@ class TrafficDetector:
         out = frame_bgr.copy()
         for car in cars:
             x1, y1, x2, y2 = car["box"]
-            # Blue cars → RED box; others → BLUE box
             box_color  = (0, 0, 220) if car["is_blue"] else (220, 80, 0)
-            label      = f"{car['color']} {car['type']} ({car['score']:.0%})"
+            label = f"{car['color']} {car['type']} ({car['score']:.0%})"
             cv2.rectangle(out, (x1, y1), (x2, y2), box_color, 2)
             cv2.rectangle(out, (x1, y1-28), (x2, y1), box_color, -1)
             cv2.putText(out, label, (x1+4, y1-8),
@@ -137,7 +112,6 @@ class TrafficDetector:
             cv2.rectangle(out, (x1, y1), (x2, y2), (0, 220, 180), 2)
             cv2.putText(out, "Person", (x1, y1-6),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 220, 180), 1)
-        # HUD overlay
         total_cars = len(cars)
         blue_cars  = sum(1 for c in cars if c["is_blue"])
         total_ppl  = len(people)
@@ -155,8 +129,6 @@ class TrafficDetector:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 1)
         return out
 
-
-# ── GUI ───────────────────────────────────────────────────────
 class CarColorApp:
     def __init__(self, root):
         self.root = root
@@ -175,7 +147,6 @@ class CarColorApp:
         ), daemon=True).start()
 
     def _build_ui(self):
-        # Header
         top = tk.Frame(self.root, bg="#1F2833", height=58)
         top.pack(fill=tk.X)
         tk.Label(top, text="🚗  CAR COLOUR DETECTION  &  TRAFFIC MONITOR",
@@ -185,7 +156,6 @@ class CarColorApp:
         main = tk.Frame(self.root, bg="#0B0C10")
         main.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
 
-        # Preview
         left = tk.Frame(main, bg="#0B0C10")
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         tk.Label(left, text="TRAFFIC PREVIEW", font=("Impact", 12),
@@ -193,7 +163,6 @@ class CarColorApp:
         self.preview = tk.Label(left, bg="#0D1117", width=700, height=480)
         self.preview.pack(padx=6, pady=4, fill=tk.BOTH, expand=True)
 
-        # Controls
         ctl = tk.Frame(left, bg="#0B0C10")
         ctl.pack(fill=tk.X, padx=8, pady=4)
         self._btn(ctl, "🖼 Open Image", self.open_image, "#C3073F").pack(side=tk.LEFT, padx=4)
@@ -201,12 +170,10 @@ class CarColorApp:
         self._btn(ctl, "📷 Webcam",    self.use_webcam, "#1A1A2E").pack(side=tk.LEFT, padx=4)
         self._btn(ctl, "⏹ Stop",       self.stop_all,   "#444").pack(side=tk.LEFT, padx=4)
 
-        # Right panel
         right = tk.Frame(main, bg="#0B0C10", width=380)
         right.pack(side=tk.LEFT, fill=tk.Y, padx=(8,0))
         right.pack_propagate(False)
 
-        # Stats cards
         st = tk.LabelFrame(right, text=" TRAFFIC STATISTICS ", bg="#0B0C10",
                            fg="#66FCF1", font=("Impact", 11))
         st.pack(fill=tk.X, padx=8, pady=8)
@@ -215,14 +182,12 @@ class CarColorApp:
         self.lbl_others = self._stat(st, "Other Cars 🔵",   "#4A90E2")
         self.lbl_people = self._stat(st, "People 🟢",       "#2ED573")
 
-        # Color breakdown
         tk.Label(right, text="COLOR BREAKDOWN", font=("Impact", 11),
                  fg="#66FCF1", bg="#0B0C10").pack(pady=(8,2))
         self.color_frame = tk.Frame(right, bg="#0B0C10")
         self.color_frame.pack(fill=tk.X, padx=8)
         self.color_labels: dict = {}
 
-        # Legend
         leg = tk.LabelFrame(right, text=" LEGEND ", bg="#0B0C10",
                             fg="#66FCF1", font=("Impact", 10))
         leg.pack(fill=tk.X, padx=8, pady=8)
@@ -233,7 +198,6 @@ class CarColorApp:
         tk.Label(leg, text="🟢 TEAL box = Person at signal",
                  bg="#0B0C10", fg="#2ED573", font=("Courier", 9)).pack(anchor=tk.W, padx=8, pady=2)
 
-        # Detected list
         tk.Label(right, text="DETECTED VEHICLES", font=("Impact", 11),
                  fg="#66FCF1", bg="#0B0C10").pack(pady=(8,2))
         self.veh_list = tk.Listbox(right, bg="#0D1117", fg="white",
@@ -241,7 +205,6 @@ class CarColorApp:
                                    selectbackground="#C3073F")
         self.veh_list.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
-        # Status
         self.status = tk.Label(self.root, text="Loading model…", bg="#1F2833",
                                fg="#66FCF1", font=("Courier", 10), anchor=tk.W)
         self.status.pack(fill=tk.X, padx=10, pady=4)
@@ -260,7 +223,6 @@ class CarColorApp:
         lbl.pack(side=tk.RIGHT)
         return lbl
 
-    # ── Actions ───────────────────────────────────────────────
     def open_image(self):
         if not self.detector.loaded:
             messagebox.showinfo("Wait", "Model still loading…"); return
@@ -337,7 +299,6 @@ class CarColorApp:
         self.lbl_others.config(text=str(others))
         self.lbl_people.config(text=str(ppl))
 
-        # Color breakdown
         counts: dict = {}
         for c in cars:
             counts[c["color"]] = counts.get(c["color"], 0) + 1
