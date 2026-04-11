@@ -40,7 +40,6 @@ class FaceEmbeddingModel(nn.Module):
         x = self.embed(x)
         return nn.functional.normalize(x, dim=1)
 
-# ── PyTorch Emotion Model ─────────────────────────────────────
 class EmotionModel(nn.Module):
     """MobileNetV2-based emotion classifier (7 classes)."""
     def __init__(self):
@@ -56,11 +55,11 @@ class EmotionModel(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-# ── Student Database ──────────────────────────────────────────
+
 class StudentDatabase:
     def __init__(self, path=STUDENT_DB_FILE):
         self.path = path
-        self.students: dict[str, dict] = {}  # id -> {name, embedding}
+        self.students: dict[str, dict] = {}  
         self.load()
 
     def load(self):
@@ -89,12 +88,11 @@ class StudentDatabase:
             return best
         return None
 
-# ── Attendance Recorder ───────────────────────────────────────
 class AttendanceRecorder:
     def __init__(self, file=ATTENDANCE_FILE):
         self.file = file
         self.today = datetime.date.today().isoformat()
-        self.records: dict[str, dict] = {}   # student_id -> record
+        self.records: dict[str, dict] = {}   
 
     def mark(self, student_id, name, emotion, confidence):
         if student_id not in self.records:
@@ -161,7 +159,7 @@ class AttendanceRecorder:
             w.writerows(self.records.values())
         return csv_file
 
-# ── GUI Application ───────────────────────────────────────────
+
 class AttendanceApp:
     def __init__(self, root):
         self.root = root
@@ -199,9 +197,7 @@ class AttendanceApp:
         self._build_ui()
         self._check_time_window()
 
-    # ── UI ────────────────────────────────────────────────────
     def _build_ui(self):
-        # Top bar
         top = tk.Frame(self.root, bg="#16213E", height=60)
         top.pack(fill=tk.X)
         tk.Label(top, text="🎓 SMART ATTENDANCE SYSTEM", font=("Courier", 18, "bold"),
@@ -210,11 +206,9 @@ class AttendanceApp:
         self.time_lbl.pack(side=tk.RIGHT, padx=20)
         self._tick()
 
-        # Main panes
         pane = tk.PanedWindow(self.root, orient=tk.HORIZONTAL, bg="#1A1A2E", sashwidth=4)
         pane.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
 
-        # Left: camera feed
         left = tk.Frame(pane, bg="#16213E", relief=tk.FLAT)
         pane.add(left, width=640)
         tk.Label(left, text="📷 LIVE CAMERA FEED", font=("Courier", 11, "bold"),
@@ -222,14 +216,12 @@ class AttendanceApp:
         self.video_lbl = tk.Label(left, bg="#0F3460", width=620, height=440)
         self.video_lbl.pack(padx=6, pady=4)
 
-        # Camera controls
         ctrl = tk.Frame(left, bg="#16213E")
         ctrl.pack(fill=tk.X, pady=4, padx=6)
         self._btn(ctrl, "▶ Start Camera", self.start_camera, "#E94560").pack(side=tk.LEFT, padx=4)
         self._btn(ctrl, "⏹ Stop", self.stop_camera, "#555").pack(side=tk.LEFT, padx=4)
         self._btn(ctrl, "📸 Capture & Mark", self.capture_mark, "#06D6A0").pack(side=tk.LEFT, padx=4)
 
-        # Register student
         reg = tk.LabelFrame(left, text=" ➕ Register New Student ", bg="#16213E",
                             fg="#A8DADC", font=("Courier", 10, "bold"), bd=1, relief=tk.GROOVE)
         reg.pack(fill=tk.X, padx=6, pady=4)
@@ -242,23 +234,19 @@ class AttendanceApp:
         self.reg_name.pack(side=tk.LEFT, padx=4)
         self._btn(r1, "Register", self.register_student, "#FFC300").pack(side=tk.LEFT, padx=4)
 
-        # Right: status & log
         right = tk.Frame(pane, bg="#16213E")
         pane.add(right)
 
-        # Time window status
         self.window_lbl = tk.Label(right, text="", font=("Courier", 11, "bold"),
                                    bg="#16213E", pady=6)
         self.window_lbl.pack(fill=tk.X, padx=10)
 
-        # Stats row
         stats = tk.Frame(right, bg="#16213E")
         stats.pack(fill=tk.X, padx=10, pady=4)
         self.stat_present = self._stat_card(stats, "Present", "#06D6A0")
         self.stat_absent  = self._stat_card(stats, "Absent",  "#E94560")
         self.stat_total   = self._stat_card(stats, "Students", "#A8DADC")
 
-        # Attendance table
         tk.Label(right, text="📋 ATTENDANCE LOG", font=("Courier", 11, "bold"),
                  fg="#E94560", bg="#16213E").pack(pady=(8,2))
         cols = ("ID", "Name", "Status", "Emotion", "Time")
@@ -280,7 +268,6 @@ class AttendanceApp:
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10,0), pady=4)
         sb.pack(side=tk.LEFT, fill=tk.Y, pady=4)
 
-        # Bottom controls
         bot = tk.Frame(self.root, bg="#16213E")
         bot.pack(fill=tk.X, padx=10, pady=6)
         self._btn(bot, "💾 Save Excel", self.save_excel, "#06D6A0").pack(side=tk.LEFT, padx=4)
@@ -305,7 +292,6 @@ class AttendanceApp:
         tk.Label(f, text=label, font=("Courier", 9), fg="#A8DADC", bg="#0F3460").pack()
         return num
 
-    # ── Clock ─────────────────────────────────────────────────
     def _tick(self):
         now = datetime.datetime.now().strftime("%A  %H:%M:%S")
         self.time_lbl.config(text=now)
@@ -324,7 +310,6 @@ class AttendanceApp:
             self.in_window = False
         self.root.after(5000, self._check_time_window)
 
-    # ── Camera ────────────────────────────────────────────────
     def start_camera(self):
         if self.running:
             return
@@ -358,7 +343,7 @@ class AttendanceApp:
             time.sleep(0.03)
 
     def _demo_loop(self):
-        """Synthetic frame for demo when no camera is connected."""
+        ""Synthetic frame for demo when no camera is connected.""
         idx = 0
         while self.running:
             frame = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -400,7 +385,6 @@ class AttendanceApp:
         self.video_lbl.configure(image=photo)
         self.video_lbl.image = photo
 
-    # ── Identification ────────────────────────────────────────
     def _get_embedding(self, face_bgr):
         face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
         pil = Image.fromarray(face_rgb)
@@ -430,7 +414,6 @@ class AttendanceApp:
         except Exception:
             return "Neutral"
 
-    # ── Actions ───────────────────────────────────────────────
     def capture_mark(self):
         if not self.in_window:
             messagebox.showwarning("Outside Window",
