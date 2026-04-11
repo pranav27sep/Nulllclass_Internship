@@ -1,21 +1,3 @@
-"""
-=============================================================
-TASK 4: NATIONALITY DETECTION MODEL
-=============================================================
-Requirements:
-  - PyTorch model to predict nationality from face image
-  - Emotion detection for all
-  - Indian:      predict age + dress color + emotion
-  - US:          predict age + emotion
-  - African:     predict emotion + dress color
-  - Others:      predict nationality + emotion
-  - Proper GUI with image preview and results panel
-
-Setup:
-  pip install torch torchvision opencv-python Pillow
-=============================================================
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import cv2
@@ -36,7 +18,6 @@ NATIONALITIES = ["Indian", "American", "African", "East Asian", "European",
 
 EMOTIONS = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
 
-# CSS-style color names for dress color detection
 COLOR_NAMES = {
     "Red": ([0, 80, 80], [10, 255, 255]),
     "Orange": ([10, 80, 80], [25, 255, 255]),
@@ -52,8 +33,6 @@ COLOR_NAMES = {
     "Brown": ([10, 40, 40], [20, 200, 150]),
 }
 
-
-# ── PyTorch Models ────────────────────────────────────────────
 class NationalityModel(nn.Module):
     """ResNet18 fine-tuned for nationality prediction."""
     def __init__(self, num_classes=len(NATIONALITIES)):
@@ -96,8 +75,6 @@ class AgeModel(nn.Module):
     def forward(self, x):
         return self.net(x).squeeze(1) * 90.0 + 5.0
 
-
-# ── Analysis Engine ───────────────────────────────────────────
 class NationalityAnalyzer:
     def __init__(self):
         self.nat_model = NationalityModel().to(DEVICE).eval()
@@ -209,7 +186,6 @@ class NationalityAnalyzer:
             lines.append(f"Age: ~{result['age']} years")
         elif nat == "African":
             lines.append(f"Dress Color: {result['dress_color']}")
-        # Others: nationality + emotion already included
         return lines
 
     def annotate(self, img_bgr, results):
@@ -222,7 +198,6 @@ class NationalityAnalyzer:
         return out
 
 
-# ── GUI ───────────────────────────────────────────────────────
 class NationalityApp:
     def __init__(self, root):
         self.root = root
@@ -235,7 +210,6 @@ class NationalityApp:
         self._build_ui()
 
     def _build_ui(self):
-        # Header
         top = tk.Frame(self.root, bg="#16213E", height=58)
         top.pack(fill=tk.X)
         tk.Label(top, text="🌍  NATIONALITY  &  EMOTION  DETECTION  SYSTEM",
@@ -245,7 +219,6 @@ class NationalityApp:
         main = tk.Frame(self.root, bg="#1A1A2E")
         main.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
 
-        # Left: image preview
         left = tk.Frame(main, bg="#16213E")
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         tk.Label(left, text="IMAGE PREVIEW", font=("Palatino", 11, "bold"),
@@ -253,7 +226,6 @@ class NationalityApp:
         self.img_canvas = tk.Label(left, bg="#0F1923", width=680, height=480)
         self.img_canvas.pack(padx=6, pady=4, fill=tk.BOTH, expand=True)
 
-        # Controls
         ctl = tk.Frame(left, bg="#16213E")
         ctl.pack(fill=tk.X, padx=8, pady=4)
         self._btn(ctl, "📂 Upload Image", self.upload_image, "#E76F51").pack(side=tk.LEFT, padx=4)
@@ -261,7 +233,6 @@ class NationalityApp:
         self._btn(ctl, "📹 Webcam",       self.webcam,       "#457B9D").pack(side=tk.LEFT, padx=4)
         self._btn(ctl, "🗑 Clear",         self.clear,        "#555").pack(side=tk.LEFT, padx=4)
 
-        # Right: results
         right = tk.Frame(main, bg="#16213E", width=400)
         right.pack(side=tk.LEFT, fill=tk.Y, padx=(8, 0))
         right.pack_propagate(False)
@@ -269,7 +240,6 @@ class NationalityApp:
         tk.Label(right, text="ANALYSIS RESULTS", font=("Palatino", 12, "bold"),
                  fg="#F4A261", bg="#16213E").pack(pady=(10, 4))
 
-        # Results scrollable text area
         result_frame = tk.Frame(right, bg="#16213E")
         result_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
         self.result_text = tk.Text(result_frame, bg="#0F1923", fg="#E2E2E2",
@@ -279,15 +249,11 @@ class NationalityApp:
         self.result_text.configure(yscrollcommand=sb.set)
         self.result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Color tags
         for tag, color in [("header", "#F4A261"), ("nat", "#06D6A0"),
                             ("emo", "#FFB703"), ("age", "#8ECAE6"),
                             ("dress", "#FB8500"), ("sep", "#555")]:
             self.result_text.tag_configure(tag, foreground=color,
                                            font=("Courier", 11, "bold"))
-
-        # Status
         self.status = tk.Label(self.root, text="Ready — Upload an image to analyze",
                                bg="#16213E", fg="#A8DADC", font=("Courier", 10), anchor=tk.W)
         self.status.pack(fill=tk.X, padx=10, pady=4)
