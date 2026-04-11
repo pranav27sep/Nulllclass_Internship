@@ -1,20 +1,3 @@
-"""
-=============================================================
-TASK 1: ATTENDANCE SYSTEM WITH EMOTION DETECTION
-=============================================================
-Requirements:
-  - PyTorch-based face detection & recognition
-  - Emotion detection per student
-  - Mark present/absent
-  - Save records to Excel/CSV with timestamp
-  - Operates only within a configurable time window
-  - GUI (tkinter)
-
-Setup (run once):
-  pip install torch torchvision opencv-python Pillow openpyxl facenet-pytorch deepface
-=============================================================
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import cv2
@@ -34,9 +17,8 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import pickle
 
-# ── Configuration ────────────────────────────────────────────
-WINDOW_START = datetime.time(9, 30)   # 9:30 AM
-WINDOW_END   = datetime.time(10, 0)   # 10:00 AM
+WINDOW_START = datetime.time(9, 30)   
+WINDOW_END   = datetime.time(10, 0)
 ATTENDANCE_FILE = "attendance_records.xlsx"
 STUDENT_DB_FILE = "student_database.pkl"
 EMBEDDINGS_DIR  = "student_faces"
@@ -44,7 +26,6 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 EMOTIONS = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
 
-# ── PyTorch Face Embedding Model ──────────────────────────────
 class FaceEmbeddingModel(nn.Module):
     """ResNet18-based face embedding network (128-d output)."""
     def __init__(self):
