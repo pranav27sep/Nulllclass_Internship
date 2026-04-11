@@ -1,21 +1,3 @@
-"""
-=============================================================
-TASK 2: ANIMAL DETECTION MODEL
-=============================================================
-Requirements:
-  - PyTorch + torchvision (Faster R-CNN / COCO pre-trained)
-  - Detect & classify multiple animals per frame
-  - Carnivores highlighted in RED rectangles
-  - Herbivores/others in BLUE rectangles
-  - Pop-up showing carnivore count
-  - Supports image and video input
-  - Proper GUI with preview
-
-Setup:
-  pip install torch torchvision opencv-python Pillow
-=============================================================
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import cv2
@@ -26,15 +8,11 @@ import numpy as np
 from PIL import Image, ImageTk
 import torch
 import torchvision
-from torchvision.models.detection import (
-    fasterrcnn_resnet50_fpn_v2,
-    FasterRCNN_ResNet50_FPN_V2_Weights,
-)
+from torchvision.models.detection import (fasterrcnn_resnet50_fpn_v2,FasterRCNN_ResNet50_FPN_V2_Weights)
 import torchvision.transforms.functional as TF
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# COCO class names (index 1-90)
 COCO_NAMES = [
     "__background__", "person", "bicycle", "car", "motorcycle", "airplane",
     "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "N/A",
