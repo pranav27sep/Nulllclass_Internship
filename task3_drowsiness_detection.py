@@ -1,22 +1,3 @@
-"""
-=============================================================
-TASK 3: DROWSINESS DETECTION MODEL
-=============================================================
-Requirements:
-  - PyTorch model to detect awake/sleeping persons
-  - Handle multiple people per frame
-  - Count total people and sleeping count
-  - Sleeping individuals highlighted in RED
-  - Predict age of each person
-  - Pop-up showing sleeping count + ages
-  - Supports image and video input
-  - Proper GUI with preview
-
-Setup:
-  pip install torch torchvision opencv-python Pillow
-=============================================================
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import cv2
@@ -33,12 +14,9 @@ import torchvision.models as models
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Eye aspect ratio threshold for drowsiness
 EAR_THRESHOLD = 0.25
-CONSEC_FRAMES  = 3      # frames eye must be below threshold
+CONSEC_FRAMES  = 3      
 
-
-# ── PyTorch Age Regression Model ──────────────────────────────
 class AgePredictor(nn.Module):
     """MobileNetV2 backbone → age regression (0–100)."""
     def __init__(self):
@@ -52,10 +30,9 @@ class AgePredictor(nn.Module):
         self.net = base
 
     def forward(self, x):
-        return self.net(x).squeeze(1) * 100.0   # 0-100
+        return self.net(x).squeeze(1) * 100.0  
 
 
-# ── PyTorch Eye State Classifier ──────────────────────────────
 class EyeStateModel(nn.Module):
     """Small CNN: Open(0) / Closed(1)."""
     def __init__(self):
@@ -75,7 +52,6 @@ class EyeStateModel(nn.Module):
         return self.classifier(self.features(x))
 
 
-# ── Detector ──────────────────────────────────────────────────
 class DrowsinessDetector:
     def __init__(self):
         self.face_cascade = cv2.CascadeClassifier(
@@ -84,7 +60,7 @@ class DrowsinessDetector:
             cv2.data.haarcascades + "haarcascade_eye.xml")
         self.age_model  = AgePredictor().to(DEVICE).eval()
         self.eye_model  = EyeStateModel().to(DEVICE).eval()
-        self.frame_counters: dict = {}   # face_id -> closed_frames
+        self.frame_counters: dict = {}   
 
         self.age_tf = transforms.Compose([
             transforms.Resize((128, 128)),
@@ -104,10 +80,10 @@ class DrowsinessDetector:
             t   = self.age_tf(Image.fromarray(rgb)).unsqueeze(0).to(DEVICE)
             with torch.no_grad():
                 age = float(self.age_model(t).item())
-            # Clamp to realistic range
+
             return max(5, min(90, int(age)))
         except Exception:
-            return 25   # fallback
+            return 25   
 
     def _eye_state(self, eye_roi_gray):
         """0 = Open, 1 = Closed (using model)."""
@@ -123,7 +99,7 @@ class DrowsinessDetector:
     def _ear_from_eyes(self, eyes, face_w, face_h):
         """Fallback: estimate EAR from eye bounding box aspect ratio."""
         if len(eyes) == 0:
-            return 0.15   # assume closed
+            return 0.15  
         ears = []
         for (ex, ey, ew, eh) in eyes:
             ear = eh / max(ew, 1)
@@ -144,7 +120,6 @@ class DrowsinessDetector:
             ear  = self._ear_from_eyes(eyes, w, h)
             is_sleeping = ear < EAR_THRESHOLD
 
-            # Persistent counter
             fid = idx
             if is_sleeping:
                 self.frame_counters[fid] = self.frame_counters.get(fid, 0) + 1
@@ -165,10 +140,10 @@ class DrowsinessDetector:
         for det in detections:
             x, y, w, h = det["box"]
             if det["sleeping"]:
-                color = (0, 0, 220)     # Red (BGR)
+                color = (0, 0, 220)    
                 status = "SLEEPING 😴"
             else:
-                color = (0, 200, 80)    # Green
+                color = (0, 200, 80)   
                 status = "Awake ✓"
             label = f"{status} | Age: ~{det['age']}"
             cv2.rectangle(out, (x, y), (x+w, y+h), color, 2)
@@ -177,8 +152,6 @@ class DrowsinessDetector:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
         return out
 
-
-# ── GUI ───────────────────────────────────────────────────────
 class DrowsinessApp:
     def __init__(self, root):
         self.root = root
@@ -192,9 +165,7 @@ class DrowsinessApp:
         self.popup_shown = False
         self._build_ui()
 
-    # ── UI ────────────────────────────────────────────────────
     def _build_ui(self):
-        # Header
         top = tk.Frame(self.root, bg="#12122A", height=55)
         top.pack(fill=tk.X)
         tk.Label(top, text="😴 DRIVER / PASSENGER DROWSINESS DETECTION",
@@ -204,7 +175,6 @@ class DrowsinessApp:
         main = tk.Frame(self.root, bg="#1C1C2E")
         main.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
 
-        # Preview
         left = tk.Frame(main, bg="#12122A")
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         tk.Label(left, text="LIVE PREVIEW", font=("Helvetica", 11, "bold"),
@@ -212,12 +182,10 @@ class DrowsinessApp:
         self.preview = tk.Label(left, bg="#07071A", width=680, height=480)
         self.preview.pack(padx=6, pady=4, fill=tk.BOTH, expand=True)
 
-        # Right panel
         right = tk.Frame(main, bg="#12122A", width=340)
         right.pack(side=tk.LEFT, fill=tk.Y, padx=(8,0))
         right.pack_propagate(False)
 
-        # Controls
         ctl = tk.LabelFrame(right, text=" INPUT ", bg="#12122A",
                             fg="#F72585", font=("Helvetica", 10, "bold"))
         ctl.pack(fill=tk.X, padx=8, pady=8)
@@ -226,7 +194,6 @@ class DrowsinessApp:
         self._btn(ctl, "📹 Webcam",     self.use_webcam, "#2D6A4F").pack(fill=tk.X, padx=8, pady=4)
         self._btn(ctl, "⏹ Stop",        self.stop_all,   "#555").pack(fill=tk.X, padx=8, pady=4)
 
-        # Stats
         st = tk.LabelFrame(right, text=" STATISTICS ", bg="#12122A",
                            fg="#F72585", font=("Helvetica", 10, "bold"))
         st.pack(fill=tk.X, padx=8, pady=8)
@@ -234,7 +201,6 @@ class DrowsinessApp:
         self.lbl_sleeping = self._stat(st, "Sleeping 🔴",    "#F72585")
         self.lbl_awake    = self._stat(st, "Awake  🟢",      "#06D6A0")
 
-        # Age info box
         tk.Label(right, text="DETECTED PERSONS", font=("Helvetica", 10, "bold"),
                  fg="#F72585", bg="#12122A").pack(pady=(8,2))
         self.listbox = tk.Listbox(right, bg="#07071A", fg="white",
@@ -242,7 +208,6 @@ class DrowsinessApp:
                                   selectbackground="#7B2D8B")
         self.listbox.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
-        # Status bar
         self.status = tk.Label(self.root, text="Ready", bg="#12122A",
                                fg="#A8DADC", font=("Courier", 10), anchor=tk.W)
         self.status.pack(fill=tk.X, padx=10, pady=4)
@@ -261,7 +226,6 @@ class DrowsinessApp:
         lbl.pack(side=tk.RIGHT)
         return lbl
 
-    # ── Actions ───────────────────────────────────────────────
     def open_image(self):
         path = filedialog.askopenfilename(
             filetypes=[("Images", "*.jpg *.jpeg *.png *.bmp")])
