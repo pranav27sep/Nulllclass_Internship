@@ -30,20 +30,18 @@ COCO_NAMES = [
     "toothbrush",
 ]
 
-# Animals present in COCO and their diet classification
 ANIMAL_COCO_IDS = {
     16: "bird",   17: "cat",   18: "dog",   19: "horse",
     20: "sheep",  21: "cow",   22: "elephant", 23: "bear",
     24: "zebra",  25: "giraffe",
 }
 
-CARNIVORES = {"cat", "dog", "bear"}          # Red
-HERBIVORES = {"horse", "sheep", "cow", "elephant", "zebra", "giraffe", "bird"}  # Blue
+CARNIVORES = {"cat", "dog", "bear"}         
+HERBIVORES = {"horse", "sheep", "cow", "elephant", "zebra", "giraffe", "bird"} 
 
 CONF_THRESHOLD = 0.45
 
 
-# ── Model wrapper ─────────────────────────────────────────────
 class AnimalDetector:
     def __init__(self):
         self.model = None
@@ -98,8 +96,6 @@ class AnimalDetector:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
         return out
 
-
-# ── GUI ───────────────────────────────────────────────────────
 class AnimalApp:
     def __init__(self, root):
         self.root = root
@@ -119,19 +115,15 @@ class AnimalApp:
     def _load_model(self):
         self.detector.load(progress_cb=lambda m: self.status_bar.config(text=m))
 
-    # ── UI ────────────────────────────────────────────────────
     def _build_ui(self):
-        # Top
         top = tk.Frame(self.root, bg="#0A1628", height=55)
         top.pack(fill=tk.X)
         tk.Label(top, text="🐾 ANIMAL DETECTION  &  CLASSIFICATION",
                  font=("Georgia", 16, "bold"), fg="#FFD166", bg="#0A1628").pack(side=tk.LEFT, padx=16, pady=10)
 
-        # Main
         main = tk.Frame(self.root, bg="#0D1B2A")
         main.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
 
-        # Canvas / preview
         left = tk.Frame(main, bg="#0A1628")
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         tk.Label(left, text="PREVIEW", font=("Georgia", 11, "bold"),
@@ -139,12 +131,10 @@ class AnimalApp:
         self.canvas = tk.Label(left, bg="#050F1A", width=700, height=480)
         self.canvas.pack(padx=6, pady=4, fill=tk.BOTH, expand=True)
 
-        # Right panel
         right = tk.Frame(main, bg="#0A1628", width=340)
         right.pack(side=tk.LEFT, fill=tk.Y, padx=(8, 0))
         right.pack_propagate(False)
 
-        # Controls
         ctrl = tk.LabelFrame(right, text=" INPUT SOURCE ", bg="#0A1628",
                               fg="#FFD166", font=("Georgia", 10, "bold"), bd=1)
         ctrl.pack(fill=tk.X, padx=8, pady=8)
@@ -153,7 +143,6 @@ class AnimalApp:
         self._btn(ctrl, "📹 Use Webcam", self.use_webcam, "#06D6A0").pack(fill=tk.X, padx=8, pady=4)
         self._btn(ctrl, "⏹ Stop",       self.stop_all,   "#555").pack(fill=tk.X, padx=8, pady=4)
 
-        # Stats
         stats = tk.LabelFrame(right, text=" DETECTION STATS ", bg="#0A1628",
                                fg="#FFD166", font=("Georgia", 10, "bold"), bd=1)
         stats.pack(fill=tk.X, padx=8, pady=8)
@@ -162,7 +151,6 @@ class AnimalApp:
         self.lbl_carn  = self._stat(stats, "Carnivores 🔴", "#EF476F")
         self.lbl_herb  = self._stat(stats, "Others 🔵",     "#06D6A0")
 
-        # Legend
         leg = tk.LabelFrame(right, text=" LEGEND ", bg="#0A1628",
                              fg="#FFD166", font=("Georgia", 10, "bold"), bd=1)
         leg.pack(fill=tk.X, padx=8, pady=8)
@@ -170,8 +158,7 @@ class AnimalApp:
                  bg="#0A1628", fg="#EF476F", font=("Georgia", 9)).pack(anchor=tk.W, padx=8, pady=2)
         tk.Label(leg, text="🔵 BLUE = Herbivore / Other animals",
                  bg="#0A1628", fg="#06D6A0", font=("Georgia", 9)).pack(anchor=tk.W, padx=8, pady=2)
-
-        # Detection list
+        
         tk.Label(right, text="DETECTED ANIMALS", font=("Georgia", 10, "bold"),
                  fg="#FFD166", bg="#0A1628").pack(pady=(8, 2))
         self.det_list = tk.Listbox(right, bg="#050F1A", fg="white",
@@ -179,7 +166,6 @@ class AnimalApp:
                                    selectbackground="#118AB2")
         self.det_list.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
-        # Status
         self.status_bar = tk.Label(self.root, text="Loading model…", fg="#A8DADC",
                                    bg="#0A1628", font=("Courier", 10), anchor=tk.W)
         self.status_bar.pack(fill=tk.X, padx=10, pady=4)
@@ -198,7 +184,6 @@ class AnimalApp:
         lbl.pack(side=tk.RIGHT)
         return lbl
 
-    # ── Image ─────────────────────────────────────────────────
     def open_image(self):
         if not self.detector.loaded:
             messagebox.showinfo("Wait", "Model still loading…"); return
@@ -225,7 +210,6 @@ class AnimalApp:
                 f"{carnivore_count} carnivore(s) detected:\n" + "\n".join(f"• {n.title()}" for n in names)
             )
 
-    # ── Video / Webcam ─────────────────────────────────────────
     def open_video(self):
         if not self.detector.loaded:
             messagebox.showinfo("Wait", "Model still loading…"); return
@@ -262,7 +246,7 @@ class AnimalApp:
                 self.running = False
                 break
             frame_skip += 1
-            if frame_skip % 3 != 0:   # process every 3rd frame
+            if frame_skip % 3 != 0: 
                 continue
             dets = self.detector.predict(frame)
             out  = self.detector.annotate(frame, dets)
@@ -279,7 +263,6 @@ class AnimalApp:
                 ))
             time.sleep(0.01)
 
-    # ── Helpers ───────────────────────────────────────────────
     def _show(self, frame_bgr):
         h, w = frame_bgr.shape[:2]
         max_w, max_h = 700, 480
