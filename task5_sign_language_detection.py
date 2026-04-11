@@ -1,21 +1,3 @@
-"""
-=============================================================
-TASK 5: SIGN LANGUAGE DETECTION MODEL
-=============================================================
-Requirements:
-  - PyTorch CNN to recognize ASL/sign gestures
-  - Detects: A–Z letters + common words
-    (Hello, Yes, No, Thanks, Sorry, Help, Stop, Good, Bad,
-     Love, Eat, Water, Home, Work, Go, Come, Wait, More, Less)
-  - Active only 6 PM – 10 PM (configurable)
-  - Supports image upload + real-time video
-  - Proper GUI
-
-Setup:
-  pip install torch torchvision opencv-python Pillow mediapipe
-=============================================================
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import cv2
@@ -32,20 +14,16 @@ import torchvision.models as models
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# ── Time window ───────────────────────────────────────────────
-ACTIVE_START = datetime.time(18, 0)   # 6:00 PM
-ACTIVE_END   = datetime.time(22, 0)   # 10:00 PM
+ACTIVE_START = datetime.time(18, 0)  
+ACTIVE_END   = datetime.time(22, 0)   
 
-# ── Sign labels ───────────────────────────────────────────────
 LETTERS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 WORDS   = ["Hello", "Yes", "No", "Thanks", "Sorry",
            "Help", "Stop", "Good", "Bad", "Love",
            "Eat", "Water", "Home", "Work", "Go",
            "Come", "Wait", "More", "Less"]
-ALL_SIGNS = LETTERS + WORDS   # 45 classes
+ALL_SIGNS = LETTERS + WORDS   
 
-
-# ── PyTorch Model ─────────────────────────────────────────────
 class SignLanguageModel(nn.Module):
     """
     EfficientNet-B0 backbone fine-tuned for sign language recognition.
@@ -68,8 +46,6 @@ class SignLanguageModel(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-
-# ── Hand Detector (OpenCV-based, no mediapipe required) ────────
 class HandDetector:
     def __init__(self):
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
@@ -78,7 +54,6 @@ class HandDetector:
     def detect_hand_roi(self, frame_bgr):
         """Returns (roi, box) or (None, None)."""
         roi_box = (0, 0, frame_bgr.shape[1], frame_bgr.shape[0])
-        # Use skin color detection
         hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
         lower = np.array([0, 20, 70], dtype=np.uint8)
         upper = np.array([20, 255, 255], dtype=np.uint8)
@@ -100,8 +75,6 @@ class HandDetector:
         roi = frame_bgr[y1:y2, x1:x2]
         return roi, (x1, y1, x2-x1, y2-y1)
 
-
-# ── Predictor ─────────────────────────────────────────────────
 class SignPredictor:
     def __init__(self):
         self.model = SignLanguageModel().to(DEVICE).eval()
@@ -130,7 +103,6 @@ class SignPredictor:
             return None, 0.0, frame_bgr.copy(), None
 
         sign = ALL_SIGNS[idx]
-        # Draw annotation
         out = frame_bgr.copy()
         if box:
             x, y, w, h = box
@@ -144,8 +116,6 @@ class SignPredictor:
     def predict_image(self, img_bgr):
         return self.predict(img_bgr)
 
-
-# ── GUI ───────────────────────────────────────────────────────
 class SignLanguageApp:
     def __init__(self, root):
         self.root = root
@@ -156,13 +126,12 @@ class SignLanguageApp:
         self.predictor = SignPredictor()
         self.cap = None
         self.running = False
-        self.history = []       # (sign, conf, timestamp)
+        self.history = []      
 
         self._build_ui()
         self._check_window()
 
     def _build_ui(self):
-        # Header
         top = tk.Frame(self.root, bg="#0F0E17", height=60)
         top.pack(fill=tk.X)
         tk.Label(top, text="🤟  SIGN LANGUAGE RECOGNITION  SYSTEM",
@@ -173,7 +142,7 @@ class SignLanguageApp:
         self.clock_lbl.pack(side=tk.RIGHT, padx=20)
         self._tick()
 
-        # Time window indicator
+      
         self.window_lbl = tk.Label(self.root, text="", font=("Courier", 11, "bold"),
                                    bg="#0F0E17", pady=4)
         self.window_lbl.pack(fill=tk.X, padx=10)
@@ -181,7 +150,6 @@ class SignLanguageApp:
         main = tk.Frame(self.root, bg="#0F0E17")
         main.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
-        # Camera / image preview
         left = tk.Frame(main, bg="#0F0E17")
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         tk.Label(left, text="LIVE VIEW", font=("Segoe UI", 11, "bold"),
@@ -189,19 +157,16 @@ class SignLanguageApp:
         self.preview = tk.Label(left, bg="#111111", width=680, height=460)
         self.preview.pack(padx=6, pady=4, fill=tk.BOTH, expand=True)
 
-        # Controls
         ctl = tk.Frame(left, bg="#0F0E17")
         ctl.pack(fill=tk.X, pady=4, padx=6)
         self._btn(ctl, "📷 Upload Image", self.upload_image, "#FF8906").pack(side=tk.LEFT, padx=4)
         self._btn(ctl, "📹 Start Webcam", self.start_webcam, "#3DA35D").pack(side=tk.LEFT, padx=4)
         self._btn(ctl, "⏹ Stop",          self.stop,          "#555").pack(side=tk.LEFT, padx=4)
 
-        # Right panel
         right = tk.Frame(main, bg="#0F0E17", width=380)
         right.pack(side=tk.LEFT, fill=tk.Y, padx=(8,0))
         right.pack_propagate(False)
 
-        # Big sign display
         pred_frame = tk.Frame(right, bg="#1A1A2E", relief=tk.GROOVE, bd=1)
         pred_frame.pack(fill=tk.X, padx=8, pady=8)
         tk.Label(pred_frame, text="DETECTED SIGN", font=("Segoe UI", 10),
@@ -212,8 +177,7 @@ class SignLanguageApp:
         self.conf_lbl = tk.Label(pred_frame, text="Confidence: —",
                                  font=("Segoe UI", 12), fg="#A7A9BE", bg="#1A1A2E")
         self.conf_lbl.pack(pady=(0,8))
-
-        # Reference signs
+      
         ref = tk.LabelFrame(right, text=" SIGN REFERENCE ", bg="#0F0E17",
                             fg="#FF8906", font=("Segoe UI", 10, "bold"))
         ref.pack(fill=tk.X, padx=8, pady=4)
@@ -226,7 +190,6 @@ class SignLanguageApp:
                  font=("Courier", 8), wraplength=340, justify=tk.LEFT).pack(
                  anchor=tk.W, padx=6, pady=2)
 
-        # History
         tk.Label(right, text="RECOGNITION HISTORY", font=("Segoe UI", 10, "bold"),
                  fg="#FF8906", bg="#0F0E17").pack(pady=(8,2))
         self.hist_box = tk.Listbox(right, bg="#111111", fg="white",
@@ -236,7 +199,6 @@ class SignLanguageApp:
         self._btn(right, "🗑 Clear History", self.clear_history, "#3A3A5C").pack(
                   fill=tk.X, padx=8, pady=4)
 
-        # Status
         self.status = tk.Label(self.root, text="Ready", bg="#0F0E17",
                                fg="#A7A9BE", font=("Courier", 10), anchor=tk.W)
         self.status.pack(fill=tk.X, padx=10, pady=4)
